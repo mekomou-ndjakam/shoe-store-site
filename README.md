@@ -1,2 +1,3 @@
 # shoe-store-site
-Site de la boutique en ligne des chaussures
+
+This repository contains the website for my online shoe store.
