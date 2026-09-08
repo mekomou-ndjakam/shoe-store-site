@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Aurora - boutique de chaussures en ligne moderne, rapide et élégante. Découvrez des sneakers adidas, nike et jordan avec une sélection premium."
+    />
+    <title>Aurora - Chaussures en ligne</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" type="image/svg+xml" href="aurora-logo.svg" />
+    <link rel="shortcut icon" href="aurora-logo.svg" />
+    <link rel="mask-icon" href="aurora-logo.svg" color="#FF6F3C" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+
+    <header class="topbar">
+      <div class="brand">
+        <img class="brand-mark" src="aurora-logo.svg" alt="Aurora" />
+        <div>
+          <p class="brand-name">Aurora</p>
+          <p class="brand-tagline">Chaussures en ligne</p>
+        </div>
+      </div>
+
+      <nav class="nav-links" aria-label="Navigation principale">
+        <a href="#adidas">Adidas</a>
+        <a href="#nike">Nike</a>
+        <a href="#jordan">Jordan</a>
+        <a href="#collections">Collections</a>
+        <a href="#avis">Avis</a>
+        <a href="#newsletter">Newsletter</a>
+      </nav>
+
+      <button class="cart-pill" type="button" aria-label="Panier">
+        <span>Panier</span>
+        <strong id="cartCount">2</strong>
+      </button>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <span class="eyebrow">Nouvelle collection 2026</span>
+          <h1>Les sneakers qui donnent du style à chaque pas.</h1>
+          <p>
+            Aurora rassemble des modèles adidas, nike et jordan dans une boutique premium avec
+            un parcours d'achat clair, rapide et élégant.
+          </p>
+
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#best-sellers">Voir les modèles</a>
+            <a class="btn btn-secondary" href="#collections">Explorer les styles</a>
+          </div>
+
+          <ul class="hero-trust">
+            <li>
+              <strong>Livraison 24h</strong>
+              <span>Sur les modèles en stock</span>
+            </li>
+            <li>
+              <strong>Retours gratuits</strong>
+              <span>30 jours pour changer d’avis</span>
+            </li>
+            <li>
+              <strong>Paiement sécurisé</strong>
+              <span>Carte, PayPal, Apple Pay</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="hero-showcase">
+          <div class="hero-gallery">
+            <article class="shoe-card shoe-card-main">
+              <div class="shoe-badge">Nike</div>
+              <img
+                class="shoe-image"
+                src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80"
+                alt="Sneaker sportive noire et blanche"
+              />
+              <div class="shoe-meta">
+                <div>
+                  <p class="shoe-name">Air Motion</p>
+                  <p class="shoe-desc">Amorti réactif et silhouette iconique</p>
+                </div>
+                <strong>149 €</strong>
+              </div>
+            </article>
+
+            <div class="hero-mini-stack">
+              <article class="hero-mini-card hero-mini-adidas">
+                <span class="shoe-badge">Adidas</span>
+                <h3>Street Runner</h3>
+                <p>Une paire polyvalente, urbaine et très confortable.</p>
+              </article>
+
+              <article class="hero-mini-card hero-mini-jordan">
+                <span class="shoe-badge">Jordan</span>
+                <h3>Flight Legacy</h3>
+                <p>Une basket au look plus affirmé, pensée pour se démarquer.</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="mini-metrics">
+            <article>
+              <strong>120+</strong>
+              <span>nouveaux modèles</span>
+            </article>
+            <article>
+              <strong>4.9/5</strong>
+              <span>note moyenne clients</span>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="ticker" aria-label="Marques partenaires">
+        <span>Adidas selection</span>
+        <span>Nike selection</span>
+        <span>Jordan selection</span>
+        <span>Premium leather</span>
+        <span>Limited drops</span>
+      </section>
+
+      <section id="collections" class="section">
+        <div class="section-heading">
+          <div>
+            <span class="section-kicker">Collections</span>
+            <h2>Trouve la paire adaptée à ton style et à ta marque favorite.</h2>
+          </div>
+          <p>
+            Une sélection claire, orientée adidas, nike ou jordan, pour raccourcir le chemin
+            jusqu’au produit idéal.
+          </p>
+        </div>
+
+        <div class="category-grid">
+          <article class="category-card category-card-sport" id="adidas">
+            <img
+              src="https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?auto=format&fit=crop&w=1200&q=80"
+              alt="Sneakers adidas blanches modernes"
+            />
+            <div>
+              <h3>Adidas</h3>
+              <p>Des lignes propres et un confort quotidien très facile à porter.</p>
+            </div>
+          </article>
+          <article class="category-card category-card-city" id="nike">
+            <img
+              src="https://images.unsplash.com/photo-1603808033192-082d6919d3e1?auto=format&fit=crop&w=1200&q=80"
+              alt="Sneakers nike noires et blanches"
+            />
+            <div>
+              <h3>Nike</h3>
+              <p>Des modèles dynamiques au look sport, urbain et iconique.</p>
+            </div>
+          </article>
+          <article class="category-card category-card-limited" id="jordan">
+            <img
+              src="https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&w=1200&q=80"
+              alt="Sneakers jordan rouges et blanches"
+            />
+            <div>
+              <h3>Jordan</h3>
+              <p>Une présence forte, un style premium et une vraie personnalité visuelle.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="best-sellers" class="section product-section">
+        <div class="section-heading">
+          <div>
+            <span class="section-kicker">Best-sellers</span>
+            <h2>Les modèles adidas, nike et jordan les plus demandés.</h2>
+          </div>
+          <p>Utilise le menu et les filtres pour parcourir la collection selon ta marque favorite.</p>
+        </div>
+
+        <div class="filter-bar" role="tablist" aria-label="Filtres de produits">
+          <button class="filter-btn is-active" type="button" data-filter="all">Tout</button>
+          <button class="filter-btn" type="button" data-filter="adidas">Adidas</button>
+          <button class="filter-btn" type="button" data-filter="nike">Nike</button>
+          <button class="filter-btn" type="button" data-filter="jordan">Jordan</button>
+        </div>
+
+        <div class="products-grid">
+          <article class="product-card" data-category="adidas">
+            <img
+              class="product-image"
+              src="https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?auto=format&fit=crop&w=1200&q=80"
+              alt="Chaussure adidas blanche en photo"
+            />
+            <span class="product-tag">Adidas</span>
+            <h3>Ultraboost Style</h3>
+            <p>Une basket légère et élégante pour la ville et les journées actives.</p>
+            <div class="product-footer">
+              <strong>139 €</strong>
+              <button type="button" class="add-btn">Ajouter</button>
+            </div>
+          </article>
+
+          <article class="product-card" data-category="nike">
+            <img
+              class="product-image"
+              src="https://images.unsplash.com/photo-1608379743498-fd6b8c3c0f58?auto=format&fit=crop&w=1200&q=80"
+              alt="Chaussure nike en photo de profil"
+            />
+            <span class="product-tag">Nike</span>
+            <h3>Air Max Nova</h3>
+            <p>Une silhouette dynamique avec un look sport très reconnaissable.</p>
+            <div class="product-footer">
+              <strong>129 €</strong>
+              <button type="button" class="add-btn">Ajouter</button>
+            </div>
+          </article>
+
+          <article class="product-card" data-category="jordan">
+            <img
+              class="product-image"
+              src="https://images.unsplash.com/photo-1584735175315-9d5c2e39b8f6?auto=format&fit=crop&w=1200&q=80"
+              alt="Chaussure jordan rouge et noire"
+            />
+            <span class="product-tag">Jordan</span>
+            <h3>Retro Flight</h3>
+            <p>Un style plus premium et affirmé pour les amateurs de classiques.</p>
+            <div class="product-footer">
+              <strong>159 €</strong>
+              <button type="button" class="add-btn">Ajouter</button>
+            </div>
+          </article>
+
+          <article class="product-card" data-category="adidas">
+            <img
+              class="product-image"
+              src="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80"
+              alt="Chaussure adidas lifestyle en photo"
+            />
+            <span class="product-tag">Adidas</span>
+            <h3>Campus Core</h3>
+            <p>Une paire casual facile à associer avec un jean ou un survêtement.</p>
+            <div class="product-footer">
+              <strong>145 €</strong>
+              <button type="button" class="add-btn">Ajouter</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="stats-strip">
+        <article>
+          <strong>48 h</strong>
+          <span>pour préparer ta commande</span>
+        </article>
+        <article>
+          <strong>14k</strong>
+          <span>clients satisfaits</span>
+        </article>
+        <article>
+          <strong>100%</strong>
+          <span>paiement protégé</span>
+        </article>
+      </section>
+
+      <section id="avis" class="section testimonials">
+        <div class="section-heading">
+          <div>
+            <span class="section-kicker">Avis clients</span>
+            <h2>Une expérience d’achat pensée pour convertir.</h2>
+          </div>
+          <p>Les retours clients renforcent la confiance et structurent la page de vente.</p>
+        </div>
+
+        <div class="testimonial-grid">
+          <article class="testimonial-card">
+            <p>
+              "La navigation est ultra claire, le rendu premium et j’ai trouvé ma paire en deux
+              minutes."
+            </p>
+            <strong>Sarah M.</strong>
+            <span>Paris</span>
+          </article>
+          <article class="testimonial-card">
+            <p>
+              "J’aime le côté moderne du site. On sent immédiatement une vraie marque de qualité."
+            </p>
+            <strong>Yanis B.</strong>
+            <span>Lyon</span>
+          </article>
+          <article class="testimonial-card">
+            <p>
+              "Les filtres et les cartes produit rendent l’achat simple, rapide et agréable sur mobile."
+            </p>
+            <strong>Clara D.</strong>
+            <span>Bordeaux</span>
+          </article>
+        </div>
+      </section>
+
+      <section id="newsletter" class="section newsletter">
+        <div>
+          <span class="section-kicker">Newsletter</span>
+          <h2>Reçois les drops exclusifs avant tout le monde.</h2>
+          <p>Une accroche simple pour récupérer des emails et préparer les futures campagnes.</p>
+        </div>
+        <form class="newsletter-form">
+          <input type="email" placeholder="Ton adresse email" aria-label="Adresse email" />
+          <button type="submit" class="btn btn-primary">S’inscrire</button>
+        </form>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div>
+        <p class="brand-name">Aurora</p>
+        <p>Chaussures en ligne modernes pour adidas, nike et jordan.</p>
+      </div>
+      <p>Design conceptuel prêt à personnaliser selon ta marque.</p>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
