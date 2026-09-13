@@ -22,6 +22,8 @@ class _AuthPageState extends State<AuthPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isSubmitting = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -35,14 +37,35 @@ class _AuthPageState extends State<AuthPage> {
     return RegExp(r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$").hasMatch(value.trim());
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_isSignUp) {
-      widget.controller.signUp(name: _nameController.text, email: _emailController.text);
-    } else {
-      widget.controller.login(email: _emailController.text);
+    setState(() {
+      _isSubmitting = true;
+      _errorMessage = null;
+    });
+    try {
+      if (_isSignUp) {
+        await widget.controller.signUp(
+          name: _nameController.text,
+          email: _emailController.text,
+          password: _passwordController.text,
+        );
+      } else {
+        await widget.controller.login(
+          email: _emailController.text,
+          password: _passwordController.text,
+        );
+      }
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _errorMessage = _isSignUp
+          ? 'Impossible de créer le compte. Vérifiez votre adresse e-mail.'
+          : 'Adresse e-mail ou mot de passe incorrect.');
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
-    Navigator.of(context).pop();
   }
 
   @override
@@ -119,11 +142,16 @@ class _AuthPageState extends State<AuthPage> {
                   },
                 ),
                 const SizedBox(height: 24),
+                if (_errorMessage != null) ...[
+                  Text(_errorMessage!, style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 14),
+                ],
                 SizedBox(
                   width: double.infinity,
                   child: GradientButton(
                     label: _isSignUp ? 'Créer mon compte' : 'Se connecter',
-                    onPressed: _submit,
+                    loading: _isSubmitting,
+                    onPressed: _isSubmitting ? null : _submit,
                   ),
                 ),
                 const SizedBox(height: 18),

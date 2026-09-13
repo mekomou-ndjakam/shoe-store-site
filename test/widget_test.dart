@@ -14,13 +14,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   testWidgets('Aurora storefront loads', (WidgetTester tester) async {
     await tester.pumpWidget(const AuroraApp());
 
     expect(find.textContaining('AURORA'), findsWidgets);
   });
 
-  testWidgets('Checkout shows realistic payment fields for the selected method', (WidgetTester tester) async {
+  testWidgets('Checkout does not collect payment details before Stripe is configured', (WidgetTester tester) async {
     final controller = StoreController();
     await tester.pumpWidget(
       MaterialApp(
@@ -28,19 +30,11 @@ void main() {
       ),
     );
 
-    expect(find.text('Numéro de carte'), findsOneWidget);
-
-    await tester.ensureVisible(find.text('PayPal'));
-    await tester.tap(find.text('PayPal'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Adresse e-mail PayPal'), findsOneWidget);
-
-    await tester.ensureVisible(find.text('Apple Pay'));
-    await tester.tap(find.text('Apple Pay'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Compte Apple Pay'), findsOneWidget);
+    expect(find.text('Numéro de carte'), findsNothing);
+    expect(find.text('Adresse e-mail PayPal'), findsNothing);
+    expect(find.text('Compte Apple Pay'), findsNothing);
+    expect(find.text('Le paiement sécurisé sera bientôt disponible.'), findsOneWidget);
+    expect(find.text('Paiement bientôt disponible'), findsOneWidget);
   });
 
   testWidgets('Catalog opens a category browsing page', (WidgetTester tester) async {

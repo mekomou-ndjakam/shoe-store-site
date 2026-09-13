@@ -10,7 +10,9 @@ import 'views/favorites_page.dart';
 import 'views/home_page.dart';
 
 class AuroraApp extends StatelessWidget {
-  const AuroraApp({super.key});
+  const AuroraApp({super.key, this.authEnabled = false});
+
+  final bool authEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -18,20 +20,22 @@ class AuroraApp extends StatelessWidget {
       title: 'AURORA',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      home: const AuroraShell(),
+      home: AuroraShell(authEnabled: authEnabled),
     );
   }
 }
 
 class AuroraShell extends StatefulWidget {
-  const AuroraShell({super.key});
+  const AuroraShell({super.key, this.authEnabled = false});
+
+  final bool authEnabled;
 
   @override
   State<AuroraShell> createState() => _AuroraShellState();
 }
 
 class _AuroraShellState extends State<AuroraShell> {
-  final StoreController controller = StoreController();
+  late final StoreController controller = StoreController(authEnabled: widget.authEnabled);
 
   @override
   void dispose() {

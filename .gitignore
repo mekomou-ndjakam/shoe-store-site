@@ -23,3 +23,6 @@ build/
 # The app only bundles a curated subset via pubspec.yaml's explicit asset
 # list (regenerate with `dart run tool/generate_asset_index.dart`).
 assets/products/store_images/
+
+# Local Netlify folder
+.netlify

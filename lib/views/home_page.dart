@@ -78,112 +78,209 @@ class _HomePageState extends State<HomePage> {
     }
 
     final categories = controller.categories;
-    final trending = controller.trendingProducts;
-    final heroSlides = <(String category, Product sample)>[];
-    for (final category in categories) {
-      final inCategory = controller.products.where((p) => p.category == category).toList();
-      if (inCategory.isEmpty) continue;
-      // The first photo of a folder is often a cover/logo graphic rather than
-      // the item itself, so pick a bit further into the list to represent
-      // the category with an actual product shot.
-      final representativeIndex = (inCategory.length / 3).floor().clamp(0, inCategory.length - 1);
-      heroSlides.add((category, inCategory[representativeIndex]));
-    }
+    final products = controller.products;
+    final heroProduct = products.first;
+    final latest = products.reversed.take(12).toList();
+    final shoes = products.where((product) => product.category == 'Chaussures').take(12).toList();
 
     return ContentWidth(
-      maxWidth: 720,
+      maxWidth: 1200,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 40),
         children: [
-        if (heroSlides.isNotEmpty) ...[
+          _HomeHero(product: heroProduct, onTap: () => _openCategory(heroProduct.category)),
+          const SizedBox(height: 28),
+          _SectionTitle(title: 'Shopper par univers', onSeeAll: () => controller.setTab(1)),
+          const SizedBox(height: 14),
           SizedBox(
-            height: 210,
-            child: PageView.builder(
-              controller: _heroController,
-              itemCount: heroSlides.length,
-              onPageChanged: (index) => setState(() => _currentSlide = index),
+            height: 52,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: categories.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
               itemBuilder: (context, index) {
-                final slide = heroSlides[index];
-                return _HeroSlide(
-                  category: slide.$1,
-                  sampleProduct: slide.$2,
-                  onTap: () => _openCategory(slide.$1),
+                final category = categories[index];
+                return _CategoryPill(
+                  category: category,
+                  count: controller.countForCategory(category),
+                  onTap: () => _openCategory(category),
                 );
               },
             ),
           ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(
-              heroSlides.length,
-              (index) => AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: _currentSlide == index ? 20 : 6,
-                height: 6,
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                decoration: BoxDecoration(
-                  color: _currentSlide == index ? AppColors.textPrimary : const Color(0xFFD8D2C6),
-                  borderRadius: BorderRadius.circular(999),
-                ),
+          const SizedBox(height: 34),
+          _ProductRail(
+            title: 'Nouveautés pour lui',
+            subtitle: 'Les pièces qui viennent d’arriver',
+            products: latest,
+            controller: controller,
+            onSeeAll: () => controller.setTab(1),
+            onProductTap: _openProduct,
+          ),
+          const SizedBox(height: 34),
+          _EditorialBanner(product: heroProduct, onTap: () => _openCategory(heroProduct.category)),
+          const SizedBox(height: 34),
+          if (shoes.isNotEmpty)
+            _ProductRail(
+              title: 'Les sneakers du moment',
+              subtitle: 'Des silhouettes faites pour tous les jours',
+              products: shoes,
+              controller: controller,
+              onSeeAll: () => _openCategory('Chaussures'),
+              onProductTap: _openProduct,
+            ),
+          const SizedBox(height: 34),
+          const _SectionTitle(title: 'Les services AURORA'),
+          const SizedBox(height: 14),
+          const _TrustStrip(),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeHero extends StatelessWidget {
+  const _HomeHero({required this.product, required this.onTap});
+
+  final Product product;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 330,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(color: AppColors.navy, borderRadius: BorderRadius.circular(4)),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            AppImage(product.gallery.first, fit: BoxFit.cover),
+            const DecoratedBox(decoration: BoxDecoration(gradient: AppColors.heroOverlay)),
+            Positioned(
+              left: 26,
+              bottom: 26,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('AURORA HOMME', style: TextStyle(color: AppColors.gold, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 2)),
+                  const SizedBox(height: 8),
+                  const Text('Le style commence ici.', style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 14),
+                  FilledButton.tonal(onPressed: onTap, child: const Text('Découvrir la sélection')),
+                ],
               ),
             ),
-          ),
-        ],
-        const SizedBox(height: 28),
-        const _SectionTitle(title: 'Univers'),
-        const SizedBox(height: 14),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: categories.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            mainAxisExtent: 68,
-          ),
-          itemBuilder: (context, index) {
-            final category = categories[index];
-            return _CategoryTile(
-              category: category,
-              count: controller.countForCategory(category),
-              onTap: () => _openCategory(category),
-            );
-          },
+          ],
         ),
-        const SizedBox(height: 30),
-        _SectionTitle(
-          title: 'Tendances du moment',
-          onSeeAll: () => controller.setTab(1),
-        ),
+      ),
+    );
+  }
+}
+
+class _CategoryPill extends StatelessWidget {
+  const _CategoryPill({required this.category, required this.count, required this.onTap});
+
+  final String category;
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        backgroundColor: AppColors.surface,
+        side: const BorderSide(color: AppColors.border),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+      ),
+      child: Text('$category  $count', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+    );
+  }
+}
+
+class _ProductRail extends StatelessWidget {
+  const _ProductRail({
+    required this.title,
+    required this.subtitle,
+    required this.products,
+    required this.controller,
+    required this.onSeeAll,
+    required this.onProductTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final List<Product> products;
+  final StoreController controller;
+  final VoidCallback onSeeAll;
+  final ValueChanged<Product> onProductTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitle(title: title, subtitle: subtitle, onSeeAll: onSeeAll),
         const SizedBox(height: 14),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: trending.length > 8 ? 8 : trending.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 14,
-            mainAxisSpacing: 14,
-            childAspectRatio: 0.68,
+        SizedBox(
+          height: 332,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: products.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 14),
+            itemBuilder: (context, index) {
+              final product = products[index];
+              return SizedBox(
+                width: 190,
+                child: ProductCard(
+                  product: product,
+                  isFavorite: controller.isFavorite(product),
+                  onAddToCart: controller.addToCart,
+                  onToggleFavorite: controller.toggleFavorite,
+                  onTap: () => onProductTap(product),
+                ),
+              );
+            },
           ),
-          itemBuilder: (context, index) {
-            final product = trending[index];
-            return ProductCard(
-              product: product,
-              isFavorite: controller.isFavorite(product),
-              onAddToCart: controller.addToCart,
-              onToggleFavorite: controller.toggleFavorite,
-              onTap: () => _openProduct(product),
-            );
-          },
         ),
-        const SizedBox(height: 30),
-        const _SectionTitle(title: 'Pourquoi AURORA'),
-        const SizedBox(height: 14),
-        const _TrustStrip(),
-        ],
+      ],
+    );
+  }
+}
+
+class _EditorialBanner extends StatelessWidget {
+  const _EditorialBanner({required this.product, required this.onTap});
+
+  final Product product;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        color: const Color(0xFFE8E3DA),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('LE LOOK DE LA SEMAINE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.4, color: AppColors.textSecondary)),
+                  const SizedBox(height: 8),
+                  const Text('Des essentiels simples. Une allure qui reste.', style: TextStyle(fontSize: 24, height: 1.1, fontWeight: FontWeight.w900, color: AppColors.textPrimary)),
+                  const SizedBox(height: 14),
+                  TextButton(onPressed: onTap, style: TextButton.styleFrom(padding: EdgeInsets.zero), child: const Text('Voir la sélection  →')),
+                ],
+              ),
+            ),
+            SizedBox(width: 150, height: 150, child: AppImage(product.gallery.first, fit: BoxFit.contain)),
+          ],
+        ),
       ),
     );
   }
@@ -349,9 +446,10 @@ class _CategoryTile extends StatelessWidget {
 }
 
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title, this.onSeeAll});
+  const _SectionTitle({required this.title, this.subtitle, this.onSeeAll});
 
   final String title;
+  final String? subtitle;
   final VoidCallback? onSeeAll;
 
   @override
@@ -359,9 +457,20 @@ class _SectionTitle extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.textPrimary),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.textPrimary),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 3),
+                Text(subtitle!, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              ],
+            ],
+          ),
         ),
         if (onSeeAll != null)
           TextButton(

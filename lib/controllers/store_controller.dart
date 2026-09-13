@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/catalog_taxonomy.dart';
 import '../data/generated_asset_index.dart';
@@ -8,9 +9,18 @@ import '../models/product.dart';
 const String kTout = 'Tout';
 
 class StoreController extends ChangeNotifier {
-  StoreController() {
+  StoreController({this.authEnabled = false}) {
+    if (authEnabled) _restoreSession();
     _loadImportedProducts();
+    if (authEnabled) {
+      Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+        _applySession(data.session);
+        notifyListeners();
+      });
+    }
   }
+
+  final bool authEnabled;
 
   final List<Product> _products = <Product>[];
   final Map<int, int> _cart = {};
@@ -24,23 +34,34 @@ class StoreController extends ChangeNotifier {
   String? userName;
   String? userEmail;
 
-  void login({required String email}) {
-    isAuthenticated = true;
-    userEmail = email.trim();
-    userName ??= email.split('@').first;
-    notifyListeners();
+  Future<void> login({required String email, required String password}) async {
+    await Supabase.instance.client.auth.signInWithPassword(
+      email: email.trim(),
+      password: password,
+    );
   }
 
-  void signUp({required String name, required String email}) {
-    isAuthenticated = true;
-    userName = name.trim();
-    userEmail = email.trim();
-    notifyListeners();
+  Future<void> signUp({required String name, required String email, required String password}) async {
+    await Supabase.instance.client.auth.signUp(
+      email: email.trim(),
+      password: password,
+      data: {'full_name': name.trim()},
+    );
   }
 
-  void logout() {
-    isAuthenticated = false;
-    notifyListeners();
+  Future<void> logout() async {
+    await Supabase.instance.client.auth.signOut();
+  }
+
+  void _restoreSession() {
+    _applySession(Supabase.instance.client.auth.currentSession);
+  }
+
+  void _applySession(Session? session) {
+    final user = session?.user;
+    isAuthenticated = user != null;
+    userEmail = user?.email;
+    userName = user?.userMetadata?['full_name'] as String? ?? user?.email?.split('@').first;
   }
 
   Future<void> reload() {

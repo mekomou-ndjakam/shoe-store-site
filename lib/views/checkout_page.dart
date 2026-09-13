@@ -4,7 +4,6 @@ import '../controllers/store_controller.dart';
 import '../theme/app_theme.dart';
 import '../widgets/content_width.dart';
 import '../widgets/gradient_button.dart';
-import 'order_confirmation_page.dart';
 
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key, required this.controller});
@@ -23,30 +22,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
   final _cityController = TextEditingController();
   final _postalCodeController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _cardNameController = TextEditingController();
-  final _cardNumberController = TextEditingController();
-  final _expiryController = TextEditingController();
-  final _cvcController = TextEditingController();
-  final _paypalEmailController = TextEditingController();
-  final _appleIdController = TextEditingController();
-
-  String _paymentMethod = 'Carte bancaire';
-  bool _isSubmitting = false;
 
   bool _isEmailValid(String value) {
     return RegExp(r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$").hasMatch(value.trim());
   }
-
-  bool _isCardNumberValid(String value) {
-    final normalized = value.replaceAll(RegExp(r'\s+'), '');
-    return normalized.length >= 12 && RegExp(r'^\d{12,19}$').hasMatch(normalized);
-  }
-
-  bool _isExpirationValid(String value) {
-    return RegExp(r'^(0[1-9]|1[0-2])\/(\d{2}|\d{4})$').hasMatch(value.trim());
-  }
-
-  bool _isValidCvc(String value) => RegExp(r'^\d{3,4}$').hasMatch(value.trim());
 
   @override
   void dispose() {
@@ -56,130 +35,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     _cityController.dispose();
     _postalCodeController.dispose();
     _phoneController.dispose();
-    _cardNameController.dispose();
-    _cardNumberController.dispose();
-    _expiryController.dispose();
-    _cvcController.dispose();
-    _paypalEmailController.dispose();
-    _appleIdController.dispose();
     super.dispose();
-  }
-
-  Widget _buildPaymentFields() {
-    switch (_paymentMethod) {
-      case 'PayPal':
-        return Column(
-          children: [
-            TextFormField(
-              controller: _paypalEmailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(labelText: 'Adresse e-mail PayPal'),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) return 'Adresse e-mail PayPal requise';
-                if (!_isEmailValid(value)) return 'Email invalide';
-                return null;
-              },
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'La validation du paiement se fait via votre compte PayPal sécurisé.',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-            ),
-          ],
-        );
-      case 'Apple Pay':
-        return Column(
-          children: [
-            TextFormField(
-              controller: _appleIdController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'Compte Apple Pay',
-                hintText: 'Email ou numéro associé à votre appareil',
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) return 'Le compte Apple Pay est requis';
-                return null;
-              },
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Le paiement est vérifié sur votre appareil ou via votre compte Apple sécurisé.',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-            ),
-          ],
-        );
-      case 'Carte bancaire':
-      default:
-        return Column(
-          children: [
-            TextFormField(
-              controller: _cardNameController,
-              decoration: const InputDecoration(labelText: 'Nom du titulaire'),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) return 'Le titulaire est requis';
-                return null;
-              },
-            ),
-            const SizedBox(height: 14),
-            TextFormField(
-              controller: _cardNumberController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Numéro de carte', hintText: '4242 4242 4242 4242'),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) return 'Numéro de carte requis';
-                if (!_isCardNumberValid(value)) return 'Numéro invalide';
-                return null;
-              },
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _expiryController,
-                    keyboardType: TextInputType.datetime,
-                    decoration: const InputDecoration(labelText: 'Expiration', hintText: 'MM/AA'),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) return 'Date requise';
-                      if (!_isExpirationValid(value)) return 'Date invalide';
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _cvcController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'CVC'),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) return 'CVC requis';
-                      if (!_isValidCvc(value)) return 'CVC invalide';
-                      return null;
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ],
-        );
-    }
-  }
-
-  void _submit() {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _isSubmitting = true);
-
-    Future.delayed(const Duration(milliseconds: 700), () {
-      if (!mounted) return;
-      final reference = widget.controller.placeOrder();
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => OrderConfirmationPage(controller: widget.controller, reference: reference),
-        ),
-      );
-    });
   }
 
   @override
@@ -274,27 +130,17 @@ class _CheckoutPageState extends State<CheckoutPage> {
               _Card(
                 title: 'Paiement',
                 children: [
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: ['Carte bancaire', 'PayPal', 'Apple Pay'].map((method) {
-                      final active = _paymentMethod == method;
-                      return ChoiceChip(
-                        label: Text(method),
-                        selected: active,
-                        onSelected: (_) => setState(() => _paymentMethod = method),
-                        selectedColor: AppColors.primary,
-                        backgroundColor: AppColors.background,
-                        labelStyle: TextStyle(
-                          color: active ? Colors.white : AppColors.textPrimary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        side: BorderSide(color: active ? AppColors.primary : AppColors.border),
-                      );
-                    }).toList(),
+                  const Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 30),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Le paiement sécurisé sera bientôt disponible.',
+                    style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                   ),
-                  const SizedBox(height: 16),
-                  _buildPaymentFields(),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Aucune donnée bancaire ne doit être saisie ici pour le moment. Le paiement passera par Stripe Checkout lorsque le serveur sera configuré.',
+                    style: TextStyle(color: AppColors.textSecondary, height: 1.4),
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -354,9 +200,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
               SizedBox(
                 width: double.infinity,
                 child: GradientButton(
-                  label: 'Payer maintenant',
-                  loading: _isSubmitting,
-                  onPressed: controller.isCartEmpty || _isSubmitting ? null : _submit,
+                  label: 'Paiement bientôt disponible',
+                  onPressed: null,
                 ),
               ),
             ],
