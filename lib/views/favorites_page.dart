@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import '../widgets/app_image.dart';
 import '../widgets/content_width.dart';
 import '../widgets/gradient_button.dart';
+import '../widgets/quick_add.dart';
 import 'product_detail_page.dart';
 
 class FavoritesPage extends StatelessWidget {
@@ -105,12 +106,7 @@ class FavoritesPage extends StatelessWidget {
                                     ),
                                   ),
                                   IconButton(
-                                    onPressed: () {
-                                      controller.addToCart(product);
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(duration: Duration(milliseconds: 900), content: Text('Ajouté au panier')),
-                                      );
-                                    },
+                                    onPressed: () => quickAddToCart(context, controller, product),
                                     icon: const Icon(Icons.shopping_bag_outlined),
                                   ),
                                   IconButton(

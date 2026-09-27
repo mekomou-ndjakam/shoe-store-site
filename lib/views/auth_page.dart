@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import '../widgets/content_width.dart';
 import '../widgets/gradient_button.dart';
 
+/// Sign-in / sign-up screen. Pops with `true` once the user is signed in.
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key, required this.controller, this.startInSignUp = false});
 
@@ -21,15 +22,20 @@ class _AuthPageState extends State<AuthPage> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmController = TextEditingController();
   bool _obscurePassword = true;
   bool _isSubmitting = false;
   String? _errorMessage;
+  String? _emailError;
+  String? _passwordError;
+  bool _accountExists = false;
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmController.dispose();
     super.dispose();
   }
 
@@ -37,12 +43,26 @@ class _AuthPageState extends State<AuthPage> {
     return RegExp(r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$").hasMatch(value.trim());
   }
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+  void _clearServerErrors() {
+    _errorMessage = null;
+    _emailError = null;
+    _passwordError = null;
+    _accountExists = false;
+  }
+
+  void _toggleMode() {
     setState(() {
-      _isSubmitting = true;
-      _errorMessage = null;
+      _isSignUp = !_isSignUp;
+      _clearServerErrors();
+      _passwordController.clear();
+      _confirmController.clear();
     });
+  }
+
+  Future<void> _submit() async {
+    setState(_clearServerErrors);
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isSubmitting = true);
     try {
       if (_isSignUp) {
         await widget.controller.signUp(
@@ -57,12 +77,20 @@ class _AuthPageState extends State<AuthPage> {
         );
       }
       if (!mounted) return;
-      Navigator.of(context).pop();
-    } catch (_) {
+      Navigator.of(context).pop(true);
+    } on AuthFailure catch (failure) {
       if (!mounted) return;
-      setState(() => _errorMessage = _isSignUp
-          ? 'Impossible de créer le compte. Vérifiez votre adresse e-mail.'
-          : 'Adresse e-mail ou mot de passe incorrect.');
+      setState(() {
+        _accountExists = failure.accountExists;
+        switch (failure.field) {
+          case AuthField.email:
+            _emailError = failure.message;
+          case AuthField.password:
+            _passwordError = failure.message;
+          case null:
+            _errorMessage = failure.message;
+        }
+      });
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -107,6 +135,8 @@ class _AuthPageState extends State<AuthPage> {
                 if (_isSignUp) ...[
                   TextFormField(
                     controller: _nameController,
+                    textCapitalization: TextCapitalization.words,
+                    autofillHints: const [AutofillHints.name],
                     decoration: const InputDecoration(labelText: 'Nom complet'),
                     validator: (value) {
                       if (value == null || value.trim().length < 2) return 'Nom requis';
@@ -118,29 +148,66 @@ class _AuthPageState extends State<AuthPage> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(labelText: 'Adresse e-mail'),
+                  autofillHints: const [AutofillHints.email],
+                  onChanged: (_) {
+                    if (_emailError != null) setState(() => _emailError = null);
+                  },
+                  decoration: InputDecoration(
+                    labelText: 'Adresse e-mail',
+                    errorText: _emailError,
+                    errorMaxLines: 3,
+                  ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) return 'Email requis';
                     if (!_isEmailValid(value)) return 'Format email invalide';
                     return null;
                   },
                 ),
+                if (_accountExists)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      onPressed: _toggleMode,
+                      child: const Text('Se connecter avec cette adresse', style: TextStyle(fontWeight: FontWeight.w700)),
+                    ),
+                  ),
                 const SizedBox(height: 14),
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
+                  autofillHints: [_isSignUp ? AutofillHints.newPassword : AutofillHints.password],
+                  onChanged: (_) {
+                    if (_passwordError != null) setState(() => _passwordError = null);
+                  },
                   decoration: InputDecoration(
                     labelText: 'Mot de passe',
+                    helperText: _isSignUp ? '8 caractères minimum' : null,
+                    errorText: _passwordError,
+                    errorMaxLines: 3,
                     suffixIcon: IconButton(
                       onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                       icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
                     ),
                   ),
                   validator: (value) {
-                    if (value == null || value.length < 6) return '6 caractères minimum';
+                    if (value == null || value.isEmpty) return 'Mot de passe requis';
+                    if (_isSignUp && value.length < 8) return '8 caractères minimum';
                     return null;
                   },
                 ),
+                if (_isSignUp) ...[
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: _confirmController,
+                    obscureText: _obscurePassword,
+                    autofillHints: const [AutofillHints.newPassword],
+                    decoration: const InputDecoration(labelText: 'Confirmer le mot de passe'),
+                    validator: (value) {
+                      if (value != _passwordController.text) return 'Les mots de passe ne correspondent pas';
+                      return null;
+                    },
+                  ),
+                ],
                 const SizedBox(height: 24),
                 if (_errorMessage != null) ...[
                   Text(_errorMessage!, style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.w600)),
@@ -157,7 +224,7 @@ class _AuthPageState extends State<AuthPage> {
                 const SizedBox(height: 18),
                 Center(
                   child: TextButton(
-                    onPressed: () => setState(() => _isSignUp = !_isSignUp),
+                    onPressed: _toggleMode,
                     child: Text(
                       _isSignUp
                           ? 'Déjà un compte ? Se connecter'

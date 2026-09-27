@@ -1,5 +1,28 @@
 import 'dart:ui';
 
+enum Gender { homme, femme }
+
+extension GenderLabel on Gender {
+  String get label => this == Gender.homme ? 'Homme' : 'Femme';
+}
+
+enum SizeKind { clothing, shoe, belt, oneSize }
+
+extension SizeKindLabel on SizeKind {
+  /// "Taille", "Pointure"... shown above the size selector.
+  String get label {
+    switch (this) {
+      case SizeKind.shoe:
+        return 'Pointure';
+      case SizeKind.belt:
+        return 'Tour de taille (cm)';
+      case SizeKind.clothing:
+      case SizeKind.oneSize:
+        return 'Taille';
+    }
+  }
+}
+
 class ProductReview {
   ProductReview({
     required this.author,
@@ -25,6 +48,9 @@ class Product {
     required this.price,
     required this.gallery,
     required this.accent,
+    this.genders = const {Gender.homme, Gender.femme},
+    this.sizes = const [],
+    this.sizeKind = SizeKind.oneSize,
     List<ProductReview>? reviews,
     this.isFeatured = false,
   }) : reviews = reviews ?? <ProductReview>[];
@@ -38,8 +64,15 @@ class Product {
   final double price;
   final List<String> gallery;
   final Color accent;
+  final Set<Gender> genders;
+
+  /// Sizes the customer must pick from; empty for one-size items.
+  final List<String> sizes;
+  final SizeKind sizeKind;
   final bool isFeatured;
   List<ProductReview> reviews;
+
+  bool get needsSize => sizes.isNotEmpty;
 
   double get averageRating {
     if (reviews.isEmpty) return 0;

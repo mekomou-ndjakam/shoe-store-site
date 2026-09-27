@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../controllers/store_controller.dart';
+import '../models/product.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_image.dart';
 import '../widgets/content_width.dart';
 import '../widgets/gradient_button.dart';
-import 'checkout_page.dart';
+import 'checkout_prompt.dart';
 
 class CartPage extends StatelessWidget {
   const CartPage({super.key, required this.controller});
@@ -17,7 +18,7 @@ class CartPage extends StatelessWidget {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
-        final items = controller.cartItems;
+        final items = controller.cartLines;
 
         return Scaffold(
           backgroundColor: AppColors.background,
@@ -77,7 +78,7 @@ class _CartContent extends StatelessWidget {
   const _CartContent({required this.controller, required this.items});
 
   final StoreController controller;
-  final List items;
+  final List<CartLine> items;
 
   @override
   Widget build(BuildContext context) {
@@ -101,8 +102,9 @@ class _CartContent extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
             itemCount: items.length,
             itemBuilder: (context, index) {
-              final product = items[index];
-              final quantity = controller.quantityFor(product);
+              final line = items[index];
+              final product = line.product;
+              final quantity = line.quantity;
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(10),
@@ -137,7 +139,10 @@ class _CartContent extends StatelessWidget {
                             style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                           ),
                           const SizedBox(height: 4),
-                          Text(product.brand, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                          Text(
+                            line.size == null ? product.brand : '${product.brand} · ${product.sizeKind.label.split(' ').first} ${line.size}',
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                          ),
                           const SizedBox(height: 6),
                           Text(
                             '${product.price.toStringAsFixed(0)} €',
@@ -153,7 +158,7 @@ class _CartContent extends StatelessWidget {
                           children: [
                             _QtyButton(
                               icon: Icons.remove_rounded,
-                              onTap: () => controller.removeOneFromCart(product.id),
+                              onTap: () => controller.decrementLine(line),
                             ),
                             SizedBox(
                               width: 26,
@@ -165,12 +170,12 @@ class _CartContent extends StatelessWidget {
                             ),
                             _QtyButton(
                               icon: Icons.add_rounded,
-                              onTap: () => controller.addToCart(product),
+                              onTap: () => controller.incrementLine(line),
                             ),
                           ],
                         ),
                         TextButton(
-                          onPressed: () => controller.removeProductLine(product.id),
+                          onPressed: () => controller.removeLine(line),
                           style: TextButton.styleFrom(
                             padding: EdgeInsets.zero,
                             minimumSize: const Size(0, 28),
@@ -215,11 +220,7 @@ class _CartContent extends StatelessWidget {
                 width: double.infinity,
                 child: GradientButton(
                   label: 'Passer la commande',
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => CheckoutPage(controller: controller)),
-                    );
-                  },
+                  onPressed: () => startCheckout(context, controller),
                 ),
               ),
             ],

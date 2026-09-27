@@ -12,9 +12,11 @@ import 'package:aurora_store/views/checkout_page.dart';
 import 'package:aurora_store/views/catalog_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() => SharedPreferences.setMockInitialValues({}));
 
   testWidgets('Aurora storefront loads', (WidgetTester tester) async {
     await tester.pumpWidget(const AuroraApp());

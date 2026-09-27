@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../controllers/store_controller.dart';
 import '../data/catalog_taxonomy.dart';
+import '../models/product.dart';
 import '../theme/app_theme.dart';
 import '../widgets/content_width.dart';
 import '../widgets/product_card.dart';
+import '../widgets/quick_add.dart';
 import 'product_detail_page.dart';
 
 const int _pageSize = 20;
@@ -49,7 +51,9 @@ class _CategoryPageState extends State<CategoryPage> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: Text(widget.category)),
+      appBar: AppBar(
+        title: Text(controller.gender == null ? widget.category : '${widget.category} · ${controller.gender!.label}'),
+      ),
       body: AnimatedBuilder(
         animation: controller,
         builder: (context, _) {
@@ -156,15 +160,7 @@ class _CategoryPageState extends State<CategoryPage> {
                         return ProductCard(
                           product: product,
                           isFavorite: controller.isFavorite(product),
-                          onAddToCart: (p) {
-                            controller.addToCart(p);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                duration: const Duration(milliseconds: 900),
-                                content: Text('${p.name.split(' · ').first} ajouté au panier'),
-                              ),
-                            );
-                          },
+                          onAddToCart: (p) => quickAddToCart(context, controller, p),
                           onToggleFavorite: controller.toggleFavorite,
                           onTap: () {
                             Navigator.of(context).push(

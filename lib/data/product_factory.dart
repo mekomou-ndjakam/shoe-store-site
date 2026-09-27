@@ -1,5 +1,6 @@
 import '../models/product.dart';
 import 'catalog_taxonomy.dart';
+import 'sizing.dart';
 
 /// Turns a raw asset (a folder + an image path) into a fully described
 /// [Product]: readable name, realistic price for its category, a short
@@ -17,8 +18,12 @@ class ProductFactory {
     final brand = CatalogTaxonomy.displayNameFor(folder);
     final (category, subCategory) = CatalogTaxonomy.classify(folder);
     final seed = (folder.hashCode & 0x7fffffff) + indexInFolder;
+    final genders = Sizing.gendersFor(folder: folder, subCategory: subCategory);
 
     return Product(
+      genders: genders,
+      sizes: Sizing.sizesFor(category: category, subCategory: subCategory, genders: genders),
+      sizeKind: Sizing.kindFor(category, subCategory),
       id: id,
       name: _nameFor(category, subCategory, brand, indexInFolder),
       brand: brand,

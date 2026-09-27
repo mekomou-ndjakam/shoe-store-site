@@ -10,9 +10,8 @@ import 'views/favorites_page.dart';
 import 'views/home_page.dart';
 
 class AuroraApp extends StatelessWidget {
-  const AuroraApp({super.key, this.authEnabled = false});
+  const AuroraApp({super.key});
 
-  final bool authEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -20,22 +19,21 @@ class AuroraApp extends StatelessWidget {
       title: 'AURORA',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      home: AuroraShell(authEnabled: authEnabled),
+      home: const AuroraShell(),
     );
   }
 }
 
 class AuroraShell extends StatefulWidget {
-  const AuroraShell({super.key, this.authEnabled = false});
+  const AuroraShell({super.key});
 
-  final bool authEnabled;
 
   @override
   State<AuroraShell> createState() => _AuroraShellState();
 }
 
 class _AuroraShellState extends State<AuroraShell> {
-  late final StoreController controller = StoreController(authEnabled: widget.authEnabled);
+  late final StoreController controller = StoreController();
 
   @override
   void dispose() {
@@ -59,7 +57,15 @@ class _AuroraShellState extends State<AuroraShell> {
         return Scaffold(
           backgroundColor: AppColors.background,
           appBar: AppBar(
-            titleSpacing: 18,
+            automaticallyImplyLeading: false,
+            leading: controller.canGoBack
+                ? IconButton(
+                    tooltip: 'Retour',
+                    onPressed: controller.goBack,
+                    icon: const Icon(Icons.arrow_back_rounded),
+                  )
+                : null,
+            titleSpacing: controller.canGoBack ? 0 : 18,
             title: GestureDetector(
               onTap: () => controller.setTab(0),
               child: Row(
