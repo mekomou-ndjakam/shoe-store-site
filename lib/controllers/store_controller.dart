@@ -1,67 +1,84 @@
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/catalog_taxonomy.dart';
 import '../data/generated_asset_index.dart';
 import '../data/product_factory.dart';
 import '../models/product.dart';
+import '../services/account_service.dart';
+
+export '../services/account_service.dart' show AuthFailure, AuthField, OrderSummary, ShippingAddress;
 
 const String kTout = 'Tout';
 
 class StoreController extends ChangeNotifier {
-  StoreController({this.authEnabled = false}) {
-    if (authEnabled) _restoreSession();
+  StoreController({AccountService? accounts}) : _accounts = accounts ?? AccountService() {
+    _restoreSession();
     _loadImportedProducts();
-    if (authEnabled) {
-      Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-        _applySession(data.session);
-        notifyListeners();
-      });
-    }
   }
 
-  final bool authEnabled;
+  final AccountService _accounts;
 
   final List<Product> _products = <Product>[];
-  final Map<int, int> _cart = {};
+  final List<CartLine> _cart = <CartLine>[];
   final Set<int> _favorites = <int>{};
 
   int activeTab = 0;
   bool isLoadingProducts = true;
   String? loadError;
 
-  bool isAuthenticated = false;
-  String? userName;
-  String? userEmail;
+  Account? _account;
 
+  bool get isAuthenticated => _account != null;
+  String? get userName => _account?.name;
+  String? get userEmail => _account?.email;
+  String? get userPhone => _account?.phone;
+  ShippingAddress? get userAddress => _account?.address;
+  DateTime? get memberSince => _account?.createdAt;
+  List<OrderSummary> get orders => _account?.orders ?? const [];
+
+  /// Throws an [AuthFailure] whose message can be shown as-is to the user.
   Future<void> login({required String email, required String password}) async {
-    await Supabase.instance.client.auth.signInWithPassword(
-      email: email.trim(),
-      password: password,
-    );
+    _setAccount(await _accounts.login(email: email, password: password));
   }
 
+  /// Creates the account and signs the customer in. Throws an [AuthFailure]
+  /// when the e-mail address is already used.
   Future<void> signUp({required String name, required String email, required String password}) async {
-    await Supabase.instance.client.auth.signUp(
-      email: email.trim(),
-      password: password,
-      data: {'full_name': name.trim()},
-    );
+    _setAccount(await _accounts.signUp(name: name, email: email, password: password));
   }
 
   Future<void> logout() async {
-    await Supabase.instance.client.auth.signOut();
+    await _accounts.logout();
+    _setAccount(null);
   }
 
-  void _restoreSession() {
-    _applySession(Supabase.instance.client.auth.currentSession);
+  Future<void> updateProfile({required String name, required String phone}) {
+    return _update({'name': name.trim(), 'phone': phone.trim()});
   }
 
-  void _applySession(Session? session) {
-    final user = session?.user;
-    isAuthenticated = user != null;
-    userEmail = user?.email;
-    userName = user?.userMetadata?['full_name'] as String? ?? user?.email?.split('@').first;
+  Future<void> updateAddress(ShippingAddress address) {
+    return _update({'address': address.toJson()});
+  }
+
+  Future<void> changePassword({required String currentPassword, required String newPassword}) {
+    return _accounts.changePassword(
+      email: userEmail!,
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    );
+  }
+
+  Future<void> _update(Map<String, dynamic> fields) async {
+    _setAccount(await _accounts.update(userEmail!, fields));
+  }
+
+  Future<void> _restoreSession() async {
+    _setAccount(await _accounts.currentAccount());
+  }
+
+  void _setAccount(Account? account) {
+    _account = account;
+    notifyListeners();
   }
 
   Future<void> reload() {
@@ -102,30 +119,73 @@ class StoreController extends ChangeNotifier {
 
   // ---- Catalogue ----------------------------------------------------
 
-  List<Product> get products => List.unmodifiable(_products);
+  /// The universe (Homme / Femme) the customer is browsing. Every catalogue
+  /// query below only returns products of this universe.
+  /// Null shows the whole catalogue (the Homme / Femme switch is hidden for now).
+  Gender? gender;
+
+  void setGender(Gender? value) {
+    if (value == gender) return;
+    gender = value;
+    notifyListeners();
+  }
+
+  Iterable<Product> get _inGender =>
+      gender == null ? _products : _products.where((product) => product.genders.contains(gender));
+
+  List<Product> get products => List.unmodifiable(_inGender);
 
   List<Product> get featuredProducts =>
-      _products.where((product) => product.isFeatured).take(10).toList();
+      _inGender.where((product) => product.isFeatured).take(10).toList();
 
   /// A stable, varied sample for the homepage "trending" section: a handful
   /// of products from each category rather than 10 items from one brand.
   List<Product> get trendingProducts {
     final result = <Product>[];
-    for (final category in CatalogTaxonomy.categories) {
-      result.addAll(_products.where((p) => p.category == category).take(4));
+    for (final category in categories) {
+      result.addAll(_inGender.where((p) => p.category == category).take(4));
     }
     return result;
   }
 
-  List<String> get categories => CatalogTaxonomy.categories;
+  List<String> get categories => CatalogTaxonomy.categories
+      .where((category) => _inGender.any((product) => product.category == category))
+      .toList();
 
-  List<String> subcategoriesFor(String category) => CatalogTaxonomy.subcategoriesFor(category);
+  List<String> subcategoriesFor(String category) => CatalogTaxonomy.subcategoriesFor(category)
+      .where((sub) => _inGender.any((product) => product.category == category && product.subCategory == sub))
+      .toList();
+
+  static const _menNavOrder = [
+    'Sneakers', 'Streetwear', 'Clubs européens', 'Équipes nationales', 'Running', 'Manteaux & Vestes',
+    'Maisons de luxe', 'Football', 'Montres', 'Lunettes', 'Ceintures', 'Sacs de voyage',
+  ];
+  static const _womenNavOrder = [
+    'Sacs à main', 'Maisons de luxe', 'Souliers de luxe', 'Bijoux', 'Sneakers', 'Maisons emblématiques',
+    'Streetwear', 'Manteaux & Vestes', 'Lunettes', 'Vêtements techniques', 'Montres', 'Confort & Sandales',
+  ];
+
+  /// (category, subcategory) pairs for the top navigation bar, ordered for
+  /// the current universe like the Femme / Homme menus of big retailers.
+  List<(String, String)> get navSubcategories {
+    final all = <(String, String)>[
+      for (final category in categories)
+        for (final sub in subcategoriesFor(category)) (category, sub),
+    ];
+    final order = gender == Gender.femme ? _womenNavOrder : _menNavOrder;
+    // Listed subcategories first, the others keep their catalogue order.
+    int rank((String, String) entry) {
+      final index = order.indexOf(entry.$2);
+      return index == -1 ? order.length + all.indexOf(entry) : index;
+    }
+    return [...all]..sort((a, b) => rank(a).compareTo(rank(b)));
+  }
 
   int countForCategory(String category) =>
-      _products.where((product) => product.category == category).length;
+      _inGender.where((product) => product.category == category).length;
 
   List<String> brandsFor({required String category, String subCategory = kTout}) {
-    final scoped = _products.where((product) {
+    final scoped = _inGender.where((product) {
       final matchesCategory = product.category == category;
       final matchesSub = subCategory == kTout || product.subCategory == subCategory;
       return matchesCategory && matchesSub;
@@ -149,7 +209,7 @@ class StoreController extends ChangeNotifier {
     String query = '',
     ProductSort sort = ProductSort.relevance,
   }) {
-    Iterable<Product> result = _products.where((product) => product.category == category);
+    Iterable<Product> result = _inGender.where((product) => product.category == category);
 
     if (subCategory != kTout) {
       result = result.where((product) => product.subCategory == subCategory);
@@ -169,7 +229,7 @@ class StoreController extends ChangeNotifier {
   List<Product> globalSearch(String query, {ProductSort sort = ProductSort.relevance}) {
     final q = query.trim().toLowerCase();
     if (q.isEmpty) return const [];
-    final result = _products.where((product) =>
+    final result = _inGender.where((product) =>
         product.name.toLowerCase().contains(q) ||
         product.brand.toLowerCase().contains(q) ||
         product.category.toLowerCase().contains(q) ||
@@ -217,17 +277,12 @@ class StoreController extends ChangeNotifier {
 
   // ---- Cart -------------------------------------------------------------
 
-  List<Product> get cartItems =>
-      _products.where((product) => (_cart[product.id] ?? 0) > 0).toList();
+  /// One line per product and size, in the order they were added.
+  List<CartLine> get cartLines => List.unmodifiable(_cart);
 
-  int get cartCount => _cart.values.fold<int>(0, (sum, quantity) => sum + quantity);
+  int get cartCount => _cart.fold<int>(0, (sum, line) => sum + line.quantity);
 
-  double get cartSubtotal {
-    return cartItems.fold<double>(0, (sum, product) {
-      final quantity = _cart[product.id] ?? 0;
-      return sum + (product.price * quantity);
-    });
-  }
+  double get cartSubtotal => _cart.fold<double>(0, (sum, line) => sum + line.total);
 
   double get shippingCost => cartCount == 0 ? 0 : 12.9;
 
@@ -235,25 +290,41 @@ class StoreController extends ChangeNotifier {
 
   bool get isCartEmpty => cartCount == 0;
 
-  int quantityFor(Product product) => _cart[product.id] ?? 0;
-
-  void addToCart(Product product) {
-    _cart[product.id] = (_cart[product.id] ?? 0) + 1;
-    notifyListeners();
+  CartLine? _lineFor(Product product, String? size) {
+    for (final line in _cart) {
+      if (line.product.id == product.id && line.size == size) return line;
+    }
+    return null;
   }
 
-  void removeOneFromCart(int productId) {
-    final quantity = _cart[productId] ?? 0;
-    if (quantity <= 1) {
-      _cart.remove(productId);
+  /// Adds [quantity] of [product] in [size] (null for one-size items).
+  void addToCart(Product product, {String? size, int quantity = 1}) {
+    assert(!product.needsSize || size != null, 'A size is required for ${product.name}');
+    final line = _lineFor(product, size);
+    if (line == null) {
+      _cart.add(CartLine(product: product, size: size, quantity: quantity));
     } else {
-      _cart[productId] = quantity - 1;
+      line.quantity += quantity;
     }
     notifyListeners();
   }
 
-  void removeProductLine(int productId) {
-    _cart.remove(productId);
+  void incrementLine(CartLine line) {
+    line.quantity++;
+    notifyListeners();
+  }
+
+  void decrementLine(CartLine line) {
+    if (line.quantity <= 1) {
+      _cart.remove(line);
+    } else {
+      line.quantity--;
+    }
+    notifyListeners();
+  }
+
+  void removeLine(CartLine line) {
+    _cart.remove(line);
     notifyListeners();
   }
 
@@ -263,8 +334,19 @@ class StoreController extends ChangeNotifier {
   }
 
   /// Finalises the order: returns an order reference and empties the cart.
+  /// Signed-in customers also get the order saved in their order history.
   String placeOrder() {
     final reference = 'AUR-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
+    if (isAuthenticated) {
+      final order = OrderSummary(
+        reference: reference,
+        date: DateTime.now(),
+        total: total,
+        itemCount: cartCount,
+      );
+      final history = [order, ...orders].take(20).map((o) => o.toJson()).toList();
+      _update({'orders': history}).catchError((_) {});
+    }
     clearCart();
     return reference;
   }
@@ -286,10 +368,37 @@ class StoreController extends ChangeNotifier {
 
   // ---- Navigation ------------------------------------------------------
 
+  final List<int> _tabHistory = <int>[];
+
+  /// True when [goBack] can return to a previously visited tab.
+  bool get canGoBack => _tabHistory.isNotEmpty;
+
   void setTab(int index) {
+    if (index == activeTab) return;
+    _tabHistory
+      ..remove(index)
+      ..add(activeTab);
     activeTab = index;
     notifyListeners();
   }
+
+  void goBack() {
+    if (_tabHistory.isEmpty) return;
+    activeTab = _tabHistory.removeLast();
+    notifyListeners();
+  }
+}
+
+class CartLine {
+  CartLine({required this.product, required this.size, required this.quantity});
+
+  final Product product;
+
+  /// Chosen size, or null for one-size items.
+  final String? size;
+  int quantity;
+
+  double get total => product.price * quantity;
 }
 
 enum ProductSort { relevance, priceAsc, priceDesc, newest }

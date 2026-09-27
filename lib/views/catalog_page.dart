@@ -6,6 +6,7 @@ import '../models/product.dart';
 import '../theme/app_theme.dart';
 import '../widgets/content_width.dart';
 import '../widgets/product_card.dart';
+import '../widgets/quick_add.dart';
 import 'category_page.dart';
 import 'product_detail_page.dart';
 
@@ -107,8 +108,7 @@ class _CategoryDirectory extends StatelessWidget {
         final category = categories[index];
         final color = CatalogTaxonomy.colorFor(category);
         final icon = CatalogTaxonomy.iconFor(category);
-        final subCount = controller.subcategoriesFor(category).length;
-        final productCount = controller.countForCategory(category);
+        final subCategories = controller.subcategoriesFor(category);
 
         return Material(
           color: Colors.white,
@@ -150,7 +150,9 @@ class _CategoryDirectory extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '$subCount sous-catégories · $productCount articles',
+                          subCategories.join(' · '),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                         ),
                       ],
@@ -205,7 +207,7 @@ class _SearchResults extends StatelessWidget {
               return ProductCard(
                 product: product,
                 isFavorite: controller.isFavorite(product),
-                onAddToCart: controller.addToCart,
+                onAddToCart: (p) => quickAddToCart(context, controller, p),
                 onToggleFavorite: controller.toggleFavorite,
                 onTap: () {
                   Navigator.of(context).push(

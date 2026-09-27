@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../controllers/store_controller.dart';
+import '../models/product.dart';
 import '../theme/app_theme.dart';
 import '../widgets/content_width.dart';
 import '../widgets/gradient_button.dart';
@@ -23,6 +24,23 @@ class _CheckoutPageState extends State<CheckoutPage> {
   final _postalCodeController = TextEditingController();
   final _phoneController = TextEditingController();
 
+  @override
+  void initState() {
+    super.initState();
+    final controller = widget.controller;
+    if (controller.isAuthenticated) {
+      _fullNameController.text = controller.userName ?? '';
+      _emailController.text = controller.userEmail ?? '';
+      _phoneController.text = controller.userPhone ?? '';
+      final address = controller.userAddress;
+      if (address != null) {
+        _addressController.text = address.line;
+        _cityController.text = address.city;
+        _postalCodeController.text = address.postalCode;
+      }
+    }
+  }
+
   bool _isEmailValid(String value) {
     return RegExp(r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$").hasMatch(value.trim());
   }
@@ -41,7 +59,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   @override
   Widget build(BuildContext context) {
     final controller = widget.controller;
-    final items = controller.cartItems;
+    final items = controller.cartLines;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -56,6 +74,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
             children: [
               const _StepHeader(),
               const SizedBox(height: 20),
+              _CustomerBanner(controller: controller),
+              const SizedBox(height: 16),
               _Card(
                 title: 'Livraison',
                 children: [
@@ -150,15 +170,17 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   if (items.isEmpty)
                     const Text('Aucun article dans le panier.')
                   else
-                    ...items.map((product) {
-                      final quantity = controller.quantityFor(product);
+                    ...items.map((line) {
+                      final product = line.product;
+                      final quantity = line.quantity;
+                      final size = line.size == null ? '' : ' · ${product.sizeKind.label.split(' ').first} ${line.size}';
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Row(
                           children: [
                             Expanded(
                               child: Text(
-                                '${product.name.split(' · ').first} x$quantity',
+                                '${product.name.split(' · ').first}$size x$quantity',
                                 style: const TextStyle(color: AppColors.textPrimary),
                               ),
                             ),
@@ -208,6 +230,43 @@ class _CheckoutPageState extends State<CheckoutPage> {
           ),
         ),
         ),
+      ),
+    );
+  }
+}
+
+class _CustomerBanner extends StatelessWidget {
+  const _CustomerBanner({required this.controller});
+
+  final StoreController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final signedIn = controller.isAuthenticated;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            signedIn ? Icons.verified_user_outlined : Icons.person_outline_rounded,
+            color: signedIn ? AppColors.success : AppColors.textSecondary,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              signedIn
+                  ? 'Connecté(e) en tant que ${controller.userEmail}. Vos informations ont été pré-remplies.'
+                  : 'Vous commandez en tant qu’invité. Le récapitulatif sera envoyé à l’adresse e-mail indiquée ci-dessous.',
+              style: const TextStyle(color: AppColors.textPrimary, height: 1.4),
+            ),
+          ),
+        ],
       ),
     );
   }
